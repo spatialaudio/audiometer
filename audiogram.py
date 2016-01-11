@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def set_points(dBHL_values, freqs=None, ax=None, title=None, **kwargs):
+def set_points(dBHL_values, freqs=None, ax=None, title=None, masking=False,
+               conduction='air', **kwargs):
     """Set measuring points.
 
     Parameters
@@ -16,8 +17,11 @@ def set_points(dBHL_values, freqs=None, ax=None, title=None, **kwargs):
     ax: plt.Ax, optional
           Matplotlib Ax to plot on
     title: str, optional
-         Audiogram Title
-
+          Audiogram Title
+    masking: bool, default=False
+          Masked or unmasked hearing test
+    conduction: str, default='air'
+          Air conduction is 'air' and bone conduction is 'bone'
     Returns
     -------
     plt.Axis
@@ -41,17 +45,39 @@ def set_points(dBHL_values, freqs=None, ax=None, title=None, **kwargs):
              yticks=[-10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
                      110, 120])
     ax.invert_yaxis()
-    color = 'k'
     if title is not None:
         ax.set_title(title)
         if title == 'Left Ear':
             color = 'b'
+            if conduction == 'air' and masking is False:
+                marker = 'x'
+            elif conduction == 'air' and masking is True:
+                marker = 's'
+            elif conduction == 'bone' and masking is False:
+                marker = '4'
+            elif conduction == 'bone' and masking is True:
+                marker = '*'
+            else:
+                raise NameError("Conduction has to be 'air' or 'bone'")
         elif title == 'Right Ear':
             color = 'r'
+            if conduction == 'air' and masking is False:
+                marker = 'o'
+            elif conduction == 'air' and masking is True:
+                marker = '^'
+            elif conduction == 'bone' and masking is False:
+                marker = '3'
+            elif conduction == 'bone' and masking is True:
+                marker = '8'
+            else:
+                raise NameError("Conduction has to be 'air' or 'bone'")
         else:
             raise NameError("'Left Ear' or 'Right Ear'?")
-    ax.plot(dBHL_values, color=color, marker='x', markersize=11,
-            markeredgewidth=1)
+    else:
+        color = 'k'
+        marker = 'p'
+    ax.plot(dBHL_values, color=color, marker=marker, markersize=11,
+            markeredgewidth=1, fillstyle='none')
     ax.grid(True)
     gridlines = ax.get_xgridlines() + ax.get_ygridlines()
     for line in gridlines:
