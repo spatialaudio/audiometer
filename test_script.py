@@ -1,33 +1,32 @@
+#!/usr/bin/env python3
+
 import tone_generator
 import time
-import responder
+import pyxhook_responder
 
 
 device = 0
-timeout = 2  # seconds
+timeout = 3  # seconds
+fade_in = 30  # ms
+fade_out = 40  # ms
 
-audio = tone_generator.AudioStream(device)  # open stream
-rpd = responder.MouseResponder()  # initialize MouseResponder
-audio.start(500, -30, timeout, earside='right')  # start first tone
-print("wait for clicking1")
-click = rpd.wait_for_click(timeout)  # you have 2 seconds to click
+audio = tone_generator.AudioStream(device, fade_in, fade_out)  # open stream
+rpd = pyxhook_responder.MouseResponder()  # initialize MouseResponder
+time.sleep(2)
+audio.start(20000, -10, earside='')  # start first tone
+click = rpd.wait_for_click(timeout)  # you have x seconds to click
+audio.stop(fade_out)  # stop tone
 
-audio.stop()  # stop tone
-rpd.close()  # close responder
-rpd = responder.MouseResponder()  # reinitialize MouseResponder
+time.sleep(2)
 
-if click:  # if tone is audible (clicking)..increase next tone
-    audio.start(3000, -26, timeout, earside='left')  # start increased tone
-    print("wait for clicking2")
-    click = rpd.wait_for_click(timeout)
-    audio.stop()
-    rpd.close()
+if click:
+    frequency, level = 20000, -10
+else:
+    frequency, level = 20000, -10
+audio.start(frequency, level, earside='')
 
-else:  # if tone is not audible (not clicking)...decrease next tone
-    audio.start(1000, -40, timeout, earside='left')
-    print("wait for clicking3")
-    click = rpd.wait_for_click(timeout)
-    audio.stop()
-    rpd.close()
-
+click = rpd.wait_for_click(timeout)
+audio.stop(fade_out)
+time.sleep(2)
+rpd.close()
 audio.close()
