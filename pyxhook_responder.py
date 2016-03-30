@@ -1,4 +1,5 @@
 """The responder module processes the reaction to acoustic signals."""
+
 import pyxhook
 import threading
 
