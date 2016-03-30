@@ -6,27 +6,23 @@ import pyxhook_responder
 
 
 device = 0
-timeout = 3  # seconds
+timeout = 2  # seconds
 fade_in = 30  # ms
 fade_out = 40  # ms
 
 audio = tone_generator.AudioStream(device, fade_in, fade_out)  # open stream
 rpd = pyxhook_responder.MouseResponder()  # initialize MouseResponder
-time.sleep(2)
-audio.start(20000, -10, earside='')  # start first tone
+audio.start(500, -10, earside='right')  # start first tone
 click = rpd.wait_for_click(timeout)  # you have x seconds to click
-audio.stop(fade_out)  # stop tone
-
-time.sleep(2)
-
+audio.stop()  # stop tone
 if click:
-    frequency, level = 20000, -10
+    frequency, level = 1000, -40
 else:
-    frequency, level = 20000, -10
-audio.start(frequency, level, earside='')
+    frequency, level = 2000, -25
+audio.start(frequency, level, earside='left')
 
 click = rpd.wait_for_click(timeout)
-audio.stop(fade_out)
-time.sleep(2)
+audio.stop()
 rpd.close()
 audio.close()
+audio.plotting_output()
