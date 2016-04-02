@@ -1,7 +1,6 @@
 """The responder module processes the reaction to acoustic signals."""
 
 import curses
-import pyxhook
 import time
 
 
@@ -19,21 +18,8 @@ class MouseResponder:
             curses.halfdelay(10 * timeout)
         event = self._stdscr.getch()
         if event == curses.KEY_MOUSE:
-            return True  # clicking returns True, not clicking None
+            return True
+        return False 
 
     def close(self):
         curses.endwin()
-
-
-#  def kbevent(event):
-#    print(event)
-
-#  class MouseResponder:
-#    def __enter__(self):
-#        return self
-#    def __exit__(self,*arg):
-#        self.hookman.cancel()
-#    def __init__(self):
-#        self.hookman = pyxhook.HookManager()
-#        self.hookman.MouseAllButtonsDown = kbevent
-#        self.hookman.start()
