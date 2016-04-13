@@ -26,8 +26,9 @@ class AudioStream:
 
     def _callback(self, outdata, frames, time, status):
         self._callback_status |= status
+        mytuple = self._slope, self._target_gain
         # This is thread-safe, see http://stackoverflow.com/a/17881014/500098:
-        slope, target_gain = self._slope, self._target_gain
+        slope, target_gain = mytuple
         outdata.fill(0)
         k = np.arange(self._index, self._index + frames)
         ramp = np.arange(frames) * slope + self._last_gain + slope
@@ -43,7 +44,7 @@ class AudioStream:
     def start(self, freq, gain_db, earside=None):
         assert self._target_gain == 0, (
             "Before calling start(), target_gain has to be zero")
-        assert gain_db != -np.inf, "gain_db must be a finite value"
+        assert gain_db != -np.inf, "gain_db has to be a finite value"
         self._freq = freq
         self._target_gain = _db2lin(gain_db)
         self._slope = self._target_gain / self._attack
