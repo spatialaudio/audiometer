@@ -2,6 +2,7 @@
 
 from .pyxhook import pyxhook
 import threading
+import time
 
 
 class MouseResponder:
@@ -14,6 +15,7 @@ class MouseResponder:
         self._hookman.start()
 
     def close(self):
+        time.sleep(0.01)
         self._hookman.cancel()
 
     def wait_for_click(self, timeout=None):
@@ -24,3 +26,9 @@ class MouseResponder:
     def _mcevent(self, event):
         if event.MessageName == "mouse left down":
             self._event.set()
+
+    def __exit__(self, *args):
+        self.close()
+
+    def __enter__(self):
+        return self
