@@ -69,7 +69,7 @@ with tone_generator.AudioStream(device, attack, release) as audio, (
             time.sleep(timeout + random.random())
 
     print("Presenting the last heard tone\n")
-    time.sleep(1.5)
+    time.sleep(1)
     audio.start(familiar_freq, current_level, earside=earside)
     rpd.wait_for_click(timeout)
     audio.stop()
