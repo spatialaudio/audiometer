@@ -7,24 +7,34 @@ import time
 
 class MouseResponder:
 
-    def __init__(self):
+    def __init__(self, timeout, responder_device):
+        self._timeout = timeout
         self._event = threading.Event()
         self._event.set()
         self._hookman = pyxhook.HookManager()
-        self._hookman.MouseAllButtonsDown = self._mcevent
+        if responder_device == "mouse left down":
+            self._hookman.MouseAllButtonsDown = self._mcevent
+        elif responder_device == 'spacebar':
+            self._hookman.KeyDown = self._kbevent
+        else:
+            raise ValueError("The string ist not valid")
         self._hookman.start()
 
     def close(self):
         time.sleep(0.01)
         self._hookman.cancel()
 
-    def wait_for_click(self, timeout=None):
+    def wait_for_click(self):
         self._event.clear()
-        self._event.wait(timeout=timeout)
+        self._event.wait(timeout=self._timeout)
         return self._event.is_set()
 
     def _mcevent(self, event):
         if event.MessageName == "mouse left down":
+            self._event.set()
+
+    def _kbevent(self, event):
+        if event.MessageName == "key down" and event.Key == "space":
             self._event.set()
 
     def __exit__(self, *args):
