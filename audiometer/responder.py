@@ -5,7 +5,7 @@ import threading
 import time
 
 
-class MouseResponder:
+class Responder:
 
     def __init__(self, timeout, responder_device):
         self._timeout = timeout
