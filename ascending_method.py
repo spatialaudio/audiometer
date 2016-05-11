@@ -17,51 +17,56 @@ anwendbar! Bitte suchen Sie einen Audiologen auf!
 from audiometer import controller
 from audiometer import familiarization
 
-ctrl = controller.Controller()
 
-freq_list = ctrl._freq_list()
-earside_order = ctrl._earside()  # ('right' & 'left') or ('left' & 'right')
+def step1(freq, increase_10db, decrease_20db, start_level_familiar, earside):
+    familiar_result = familiarization.fam(ctrl, freq, increase_10db,
+                                          decrease_20db, start_level_familiar,
+                                          earside)
+    current_level = familiar_result - decrease_10db
+    click = ctrl.process(freq, familiar_result, earside)
+    while not click:
+        current_level += increase_5db
+        click = ctrl.process(freq, current_level, earside)
+    return current_level, familiar_result, click
 
 
-increase_5db = 5  # dB
-increase_10db = 10  # dB
-decrease_10db = 10  # dB
+def step2(click, current_level, freq, earside):
+    three_answers = False
+    while not three_answers:
+        current_level_list = []
+        for x in range(5):
+            while click:
+                current_level -= decrease_10db
+                click = ctrl.process(freq, current_level, earside)
 
-
-for earside in earside_order:
-    for freq in freq_list:
-
-# Step 1
-        familiar_result = familiarization.fam(ctrl, freq, earside)
-        current_level = familiar_result - decrease_10db
-        click = ctrl._process(freq, familiar_result, earside)
-        while not click:
-            current_level += increase_5db
-            click = ctrl._process(freq, current_level, earside)
-# Step 2
-        three_answers = False
-        while not three_answers:
-            current_level_list = []
-            for x in range(5):
-                while click:
-                    current_level -= decrease_10db
-                    click = ctrl._process(freq, current_level, earside)
-
-                while not click:
-                    current_level += increase_5db
-                    click = ctrl._process(freq, current_level, earside)
-                current_level_list.append(current_level)
-                # http://stackoverflow.com/a/11236055
-                if [k for k in current_level_list
+            while not click:
+                current_level += increase_5db
+                click = ctrl.process(freq, current_level, earside)
+            current_level_list.append(current_level)
+            # http://stackoverflow.com/a/11236055
+            if [k for k in current_level_list
                 if current_level_list.count(k) == 3]:
-                    three_answers = True
-                    break
-            else:
-                current_level += increase_10db
-        ctrl._save_results(current_level, freq, earside,
-            'Ascending Method Results')
+                three_answers = True
+                break
+        else:
+            current_level += increase_10db
+        return current_level
 
 
-# Step 3
+with controller.Controller() as ctrl:
+    freq_list = ctrl.get_freqs()
+    earside_order = ctrl.get_earside()
+    (increase_5db, increase_10db, decrease_10db,
+    decrease_20db) = ctrl.get_increases_decreases()
+    start_level_familiar = ctrl.get_start_level_familiar()
+    for earside in earside_order:
+        for freq in freq_list:
+            current_level, familiar_result, click = step1(freq, increase_10db,
+                                                          decrease_20db,
+                                                          start_level_familiar,
+                                                          earside)
+            current_level = step2(click, current_level, freq, earside)
+            ctrl.save_results(familiar_result, current_level, freq, earside)
 
-ctrl._exit()
+
+
