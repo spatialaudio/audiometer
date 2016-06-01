@@ -45,13 +45,16 @@ class AudioStream:
         self._index += frames
         self._last_gain = gain[-1]
 
-    def start(self, freq, gain_db, earside=None):
+    def start(self, freq, gain_db, earside=None, attack=None):
         if self._target_gain != 0:
             raise ValueError("Before calling start(), target_gain must be zero")
         if gain_db == -np.inf:
             raise ValueError("gain_db must be a finite value")
         target_gain = _db2lin(gain_db)
-        slope = target_gain / self._attack
+        if attack is None:
+            slope = target_gain / self._attack
+        else:
+            slope = target_gain / attack
         self._target_gain = target_gain
         self._freq = freq
         self._callback_parameters = target_gain, slope, freq
