@@ -12,7 +12,7 @@ class Responder:
         self._event = threading.Event()
         self._event.set()
         self._hookman = pyxhook.HookManager()
-        if responder_device == "mouse left down":
+        if responder_device == "mouse left":
             self._hookman.MouseAllButtonsDown = self._mcevent
         elif responder_device == 'spacebar':
             self._hookman.KeyDown = self._kbevent
@@ -24,9 +24,13 @@ class Responder:
         time.sleep(0.01)
         self._hookman.cancel()
 
-    def wait_for_click(self):
+    def wait_for_click(self, timeout=None):
         self._event.clear()
-        self._event.wait(timeout=self._timeout)
+        if timeout is None:
+            self._event.wait(timeout=self._timeout)
+        else:
+            self._event.wait(timeout=timeout)
+
         return self._event.is_set()
 
     def _mcevent(self, event):
