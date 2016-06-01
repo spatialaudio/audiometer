@@ -13,7 +13,7 @@ def config():
     parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
     parser.add_argument("--device", help='How to select your soundcard is '
     'shown in http://python-sounddevice.readthedocs.org/en/0.3.3/'
-    '#sounddevice.query_devices', type=int, default=1)
+    '#sounddevice.query_devices', type=int, default=None)
     parser.add_argument("--calibration_factor", type=float, default=1)
     parser.add_argument("--responder_device", type=str,
                         default="mouse left", help='You can also'
