@@ -1,64 +1,110 @@
 from audiometer import tone_generator
 from audiometer import responder
-import csv
+import argparse
 import time
-import random
-from audiometer import config_loader
 import os
+import csv
+import random
+import numpy as np
+
+
+def config():
+
+    parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
+    parser.add_argument("--device", help='How to select your soundcard is '
+    'shown in http://python-sounddevice.readthedocs.org/en/0.3.3/'
+    '#sounddevice.query_devices', type=int, default=1)
+    parser.add_argument("--calibration_factor", type=float, default=1)
+    parser.add_argument("--responder_device", type=str,
+                        default="mouse left", help='You can also'
+                        'use the spacebar key. In this case enter: '
+                        'spacebar')
+    parser.add_argument("--attack", type=float, default=30)
+    parser.add_argument("--release", type=float, default=40)
+    parser.add_argument("--timeout", type=float, default=2, help='For more'
+    'information on the timeout duration have a look at '
+    'ISO8253-1 ch. 6.2.1')
+    parser.add_argument("--earsides", type=str, nargs='+',
+                        default=['right', 'left'], help="The first list item "
+                        "represents the beginning earside. The second list "
+                        "item represents the ending earside, consequently. "
+                        "It is also possible to choose only one earside, "
+                        "left or right")
+    parser.add_argument("--small_level_increment", type=float, default=5)
+    parser.add_argument("--large_level_increment", type=float, default=10)
+    parser.add_argument("--small_level_decrement", type=float, default=10)
+    parser.add_argument("--large_level_decrement", type=float, default=20)
+    parser.add_argument("--start_level_familiar", type=float, default=-40)
+    parser.add_argument("--freqs", type=float, nargs='+', default=[1000, 1500,
+                        2000, 3000, 4000, 6000, 8000, 750, 500, 250, 125],
+                        help='The size'
+                        'and number of frequencies are shown in'
+                        'DIN60645-1 ch. 6.1.1. Their order'
+                        'are described in ISO8253-1 ch. 6.1')
+    parser.add_argument("--results_path", type=str,
+                        default='audiometer/results')
+    parser.add_argument("--filename", default='result_{}'.format(time.strftime(
+                        '%Y-%m-%d_%H-%M-%S')) + '.csv')
+
+    parser.add_argument("--carry_on", type=str)
+
+    parser.add_argument("--logging", type=bool, default=False)
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.results_path):
+        os.makedirs(args.results_path)
+
+    return args
 
 
 class Controller:
 
     def __init__(self):
 
-        self._cfg = config_loader.Config()
-        self.freqs = self._cfg.freqs
+        self.config = config()
 
-        if self._cfg.earside == 'right':
-            earside_contralateral = 'left'
-        elif self._cfg.earside == 'left':
-            earside_contralateral = 'right'
+        if self.config.carry_on:
+            self.csvfile = open(os.path.join(self.config.results_path,
+                                             self.config.carry_on), 'r+')
+            reader = csv.reader(self.csvfile)
+            for row in reader:
+                pass
+            last_freq = row[1]
+            self.config.freqs = self.config.freqs[self.config.freqs.index(
+                                                  int(last_freq)) + 1:]
+            self.config.earsides[0] = row[2]
+            self.writer = csv.writer(self.csvfile)
         else:
-            raise ValueError("earside_beginning must be 'right' or 'left'")
-        self.earside_order = self._cfg.earside, earside_contralateral
+            self.csvfile = open(os.path.join(self.config.results_path,
+                                             self.config.filename), 'w')
+            self.writer = csv.writer(self.csvfile)
+            self.writer.writerow(['Level/dB', 'Frequency/Hz', 'Earside'])
 
-        self.small_level_increment = self._cfg.small_level_increment
-        self.large_level_increment = self._cfg.large_level_increment
-        self.small_level_decrement = self._cfg.small_level_decrement
-        self.large_level_decrement = self._cfg.large_level_decrement
+        self._audio = tone_generator.AudioStream(self.config.device,
+                                                 self.config.attack,
+                                                 self.config.release)
+        self._rpd = responder.Responder(self.config.timeout,
+                                        self.config.responder_device)
 
-        self.start_level_familiar = self._cfg.start_level_familiar
-
-        path = 'audiometer/results'
-        if not os.path.exists(path):
-            os.makedirs(path)
-        filename = ('result_{}'.format(time.strftime("%d.%m.%Y_%H:%M:%S")) +
-                   '.csv')
-        self._csvfile = open(os.path.join(path, filename), 'w')
-        self._writer = csv.writer(self._csvfile)
-        self._writer.writerow(['Familiarization Result/dB', 'Level/dB',
-                               'Frequency/Hz', 'Earside'])
-
-        self._audio = tone_generator.AudioStream(self._cfg.device,
-                                                 self._cfg.attack,
-                                                 self._cfg.release)
-        self._rpd = responder.Responder(self._cfg.timeout,
-                                        self._cfg.responder_device)
-
-    def process(self, freq, level, earside):
+    def clicktone(self, freq, level, earside, attack=None, timeout=None,
+                fam=False):
         if level >= 0:
-            raise OverflowError("The signal is distorted. Possible causes are "
-            "an incorrect calibration or a severe hearing loss. I'm going "
-            "to the next frequency")
-        self._audio.start(freq, level, earside)
-        click = self._rpd.wait_for_click()
+            raise OverflowError
+        self._audio.start(freq, level, earside, attack=attack)
+        click = self._rpd.wait_for_click(timeout=timeout)
+        if fam:
+            current_level = np.ceil(20 * np.log10(self._audio._last_gain))
+            self._audio.stop()
+            time.sleep(self.config.timeout + random.random())
+            return click, current_level
         self._audio.stop()
-        time.sleep(self._cfg.timeout + random.random())
+        time.sleep(self.config.timeout + random.random())
         return click
 
-    def save_results(self, familiar_result, level, freq, earside):
-        row = [familiar_result, level, freq, earside]
-        self._writer.writerow(row)
+    def save_results(self, level, freq, earside):
+        row = [level, freq, earside]
+        self.writer.writerow(row)
 
     def __enter__(self):
         return self
@@ -67,5 +113,5 @@ class Controller:
         time.sleep(0.1)
         self._rpd.close()
         self._audio.close()
-        self._csvfile.close()
+        self.csvfile.close()
 
