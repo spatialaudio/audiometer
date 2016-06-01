@@ -13,83 +13,115 @@ anwendbar! Bitte suchen Sie einen Audiologen auf!
 
 """
 
-
+import argparse
+import logging
 from audiometer import controller
-from audiometer import familiarization
 
 
-def decrement_click(current_level, level_decrement):
-
-    current_level -= level_decrement
-    click = ctrl.process(freq, current_level, earside)
-    return current_level, click
+parser = argparse.ArgumentParser()
 
 
-def increment_click(current_level, level_increment):
-
-    current_level += level_increment
-    click = ctrl.process(freq, current_level, earside)
-    return current_level, click
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s',
+                    handlers=[logging.FileHandler("logfile.log", 'w'),
+                              logging.StreamHandler()])
 
 
-def step1(freq, start_level_familiar, earside):
-    familiar_result = familiarization.fam(ctrl, freq, large_level_increment,
-                                          large_level_decrement,
-                                          start_level_familiar, earside)
+class AscendingMethod:
 
-    current_level, click = decrement_click(familiar_result,
-                                           small_level_decrement)
+    def __init__(self, freq, earside):
+        self.freq = freq
+        self.earside = earside
+        self.current_level = 0
+        self.click = False
 
-    while not click:
-        increment_click(current_level, small_level_increment)
-    return current_level, familiar_result, click
+    def decrement_click(self, level_decrement):
+
+        self.current_level -= level_decrement
+        self.click = ctrl.clicktone(self.freq, self.current_level, self.earside)
+
+    def increment_click(self, level_increment):
+
+        self.current_level += level_increment
+        self.click = ctrl.clicktone(self.freq, self.current_level, self.earside)
 
 
-def step2(click, current_level, freq, earside):
+def familiarization():
+    logging.info("Begin Familiarization")
+
+    while not asc_method.click:
+        (asc_method.click,
+         asc_method.current_level) = ctrl.clicktone(asc_method.freq, -1,
+                                                  asc_method.earside,
+                                                  attack=1000000,
+                                                  timeout=15,
+                                                  fam=True)
+
+    while asc_method.click:
+        logging.info("-%s", ctrl.config.large_level_decrement)
+        asc_method.decrement_click(ctrl.config.large_level_decrement)
+
+    while not asc_method.click:
+        logging.info("+%s", ctrl.config.large_level_increment)
+        asc_method.increment_click(ctrl.config.large_level_increment)
+
+
+def hearing_test():
+    familiarization()
+
+    logging.info("End Familiarization: -%s", ctrl.config.small_level_decrement)
+    asc_method.decrement_click(ctrl.config.small_level_decrement)
+
+    while not asc_method.click:
+        logging.info("+%s", ctrl.config.small_level_increment)
+        asc_method.increment_click(ctrl.config.small_level_increment)
+
+    current_level_list = []
+    current_level_list.append(asc_method.current_level)
+
     three_answers = False
     while not three_answers:
-        current_level_list = []
-        for x in range(5):
-            while click:
-                current_level, click = decrement_click(current_level,
-                                                       small_level_decrement)
-            while not click:
-                current_level, click = increment_click(current_level,
-                                                       small_level_increment)
-            current_level_list.append(current_level)
+        logging.info("3of5?: %s", current_level_list)
+        for x in range(4):
+            while asc_method.click:
+                logging.info("-%s", ctrl.config.small_level_decrement)
+                asc_method.decrement_click(ctrl.config.small_level_decrement)
+
+            while not asc_method.click:
+                logging.info("+%s", ctrl.config.small_level_increment)
+                asc_method.increment_click(ctrl.config.small_level_increment)
+
+            current_level_list.append(asc_method.current_level)
+            logging.info("3of5?: %s", current_level_list)
             # http://stackoverflow.com/a/11236055
             if [k for k in current_level_list
                 if current_level_list.count(k) == 3]:
                 three_answers = True
+                logging.info("3of5 --> True")
                 break
         else:
-            current_level += large_level_increment
-        return current_level
+            logging.info("No Match! --> +%s", ctrl.config.large_level_increment)
+            current_level_list = []
+            asc_method.increment_click(ctrl.config.large_level_increment)
 
 
 with controller.Controller() as ctrl:
+    if not ctrl.config.logging:
+        logging.disable(logging.CRITICAL)
 
-    freq_list = ctrl.freqs
-
-    earside_order = ctrl.earside_order
-
-    small_level_increment = ctrl.small_level_increment
-    large_level_increment = ctrl.large_level_increment
-    small_level_decrement = ctrl.small_level_decrement
-    large_level_decrement = ctrl.large_level_decrement
-
-    start_level_familiar = ctrl.start_level_familiar
-
-    for earside in earside_order:
-        i = 0
-        for freq in freq_list[i:]:
+    for earside in ctrl.config.earsides:
+        for freq in ctrl.config.freqs:
+            logging.info('freq:%s earside:%s', freq, earside)
+            asc_method = AscendingMethod(freq, earside)
             try:
-                current_level, familiar_result, click = step1(freq,
-                                                          start_level_familiar,
-                                                          earside)
-                current_level = step2(click, current_level, freq, earside)
-                ctrl.save_results(familiar_result, current_level, freq, earside)
-            except OverflowError:
-                jump_to_next_freq = freq_list.index(freq) + 1
-                i = jump_to_next_freq
+                hearing_test()
+                ctrl.save_results(asc_method.current_level, asc_method.freq,
+                                  asc_method.earside)
 
+            except OverflowError:
+                print("The signal is distorted. Possible causes are an "
+                      "incorrect calibration or a severe hearing loss. "
+                      "I'm going to the next frequency.")
+                continue
+
+            except KeyboardInterrupt:
+                parser.exit('\nInterrupted by user')
