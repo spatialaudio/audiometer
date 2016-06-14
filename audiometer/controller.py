@@ -5,36 +5,36 @@ import time
 import os
 import csv
 import random
-import numpy as np
 
 
 def config():
 
     parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
-    parser.add_argument("--device", help='How to select your soundcard is '
-    'shown in http://python-sounddevice.readthedocs.org/en/0.3.3/'
-    '#sounddevice.query_devices', type=int, default=None)
-    parser.add_argument("--calibration_factor", type=float, default=1)
-    parser.add_argument("--responder_device", type=str,
-                        default="mouse left", help='You can also'
-                        'use the spacebar key. In this case enter: '
-                        'spacebar')
+    parser.add_argument(
+        "--device", help='How to select your soundcard is '
+        'shown in http://python-sounddevice.readthedocs.org/en/0.3.3/'
+        '#sounddevice.query_devices', type=int, default=None)
+    parser.add_argument("--calibration-factor", type=float, default=1)
+    parser.add_argument("--responder-device", type=str,
+                        default="mouse left")
+    parser.add_argument("--beginning-fam-level", type=float, default=-40)
     parser.add_argument("--attack", type=float, default=30)
     parser.add_argument("--release", type=float, default=40)
-    parser.add_argument("--timeout", type=float, default=2, help='For more'
-    'information on the timeout duration have a look at '
-    'ISO8253-1 ch. 6.2.1')
+    parser.add_argument(
+        "--timeout", type=float, default=2, help='For more'
+        'information on the timeout duration have a look at '
+        'ISO8253-1 ch. 6.2.1')
     parser.add_argument("--earsides", type=str, nargs='+',
                         default=['right', 'left'], help="The first list item "
                         "represents the beginning earside. The second list "
                         "item represents the ending earside, consequently. "
                         "It is also possible to choose only one earside, "
                         "left or right")
-    parser.add_argument("--small_level_increment", type=float, default=5)
-    parser.add_argument("--large_level_increment", type=float, default=10)
-    parser.add_argument("--small_level_decrement", type=float, default=10)
-    parser.add_argument("--large_level_decrement", type=float, default=20)
-    parser.add_argument("--start_level_familiar", type=float, default=-40)
+    parser.add_argument("--small-level-increment", type=float, default=5)
+    parser.add_argument("--large-level-increment", type=float, default=10)
+    parser.add_argument("--small-level-decrement", type=float, default=10)
+    parser.add_argument("--large-level-decrement", type=float, default=20)
+    parser.add_argument("--start-level-familiar", type=float, default=-40)
     parser.add_argument("--freqs", type=float, nargs='+', default=[1000, 1500,
                         2000, 3000, 4000, 6000, 8000, 750, 500, 250, 125],
                         help='The size'
@@ -46,9 +46,9 @@ def config():
     parser.add_argument("--filename", default='result_{}'.format(time.strftime(
                         '%Y-%m-%d_%H-%M-%S')) + '.csv')
 
-    parser.add_argument("--carry_on", type=str)
+    parser.add_argument("--carry-on", type=str)
 
-    parser.add_argument("--logging", type=bool, default=False)
+    parser.add_argument("--logging", action='store_true')
 
     args = parser.parse_args()
 
@@ -87,20 +87,43 @@ class Controller:
         self._rpd = responder.Responder(self.config.timeout,
                                         self.config.responder_device)
 
-    def clicktone(self, freq, level, earside, attack=None, timeout=None,
-                fam=False):
+    def clicktone(self, freq, level, earside):
         if level >= 0:
             raise OverflowError
-        self._audio.start(freq, level, earside, attack=attack)
-        click = self._rpd.wait_for_click(timeout=timeout)
-        if fam:
-            current_level = np.ceil(20 * np.log10(self._audio._last_gain))
-            self._audio.stop()
-            time.sleep(self.config.timeout + random.random())
-            return click, current_level
+        self._rpd.clear()
+        self._audio.start(freq, level, earside)
+        time.sleep(self.config.timeout)
+        click_down = self._rpd.click_down()
         self._audio.stop()
-        time.sleep(self.config.timeout + random.random())
-        return click
+        if click_down:
+            time.sleep(self.config.timeout * 0.75)  # tolerance: 75% of timeout
+            click_up = self._rpd.click_up()
+            if click_up:
+                time.sleep(self.config.timeout * 0.25 + random.random())
+                return True
+            else:
+                self._rpd.wait_for_click_up()
+                return False
+
+        else:
+            time.sleep(self.config.timeout + random.random())
+            return False
+
+    def audibletone(self, freq, current_level, earside):
+        self.key = ''
+        while self.key != 'enter':
+            if current_level > 0:
+                print("WARNING: Signal is distorted. Decrease the current "
+                      "level!")
+            self._audio.start(freq, current_level, earside)
+            self.key = self._rpd.wait_for_arrow()
+            if self.key == 'arrow_down':
+                current_level -= 5
+            if self.key == 'arrow_up':
+                current_level += 5
+            self._audio.stop()
+
+        return current_level
 
     def save_results(self, level, freq, earside):
         row = [level, freq, earside]
@@ -114,4 +137,3 @@ class Controller:
         self._rpd.close()
         self._audio.close()
         self.csvfile.close()
-
