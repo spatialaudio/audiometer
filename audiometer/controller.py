@@ -21,9 +21,15 @@ def config():
     parser.add_argument("--attack", type=float, default=30)
     parser.add_argument("--release", type=float, default=40)
     parser.add_argument(
-        "--timeout", type=float, default=2, help='For more'
-        'information on the timeout duration have a look at '
+        "--tone-duration", type=float, default=2, help='For more'
+        'information on the tone duration have a look at '
         'ISO8253-1 ch. 6.2.1')
+    parser.add_argument("--tolerance", type=float, default=1.5)
+    parser.add_argument(
+        "--pause-time", type=float, default=[2, 3], nargs=2, help="The pause "
+        "time is calculated by an interval [a,b] randomly. It represents "
+        "the total duration after the tone presentation. Please note, "
+        "the pause time has to be greater than or equal to the tone duration")
     parser.add_argument("--earsides", type=str, nargs='+',
                         default=['right', 'left'], help="The first list item "
                         "represents the beginning earside. The second list "
@@ -62,6 +68,7 @@ class Controller:
 
     def __init__(self):
 
+        os.system("stty -echo")
         self.config = config()
 
         if self.config.carry_on:
@@ -84,7 +91,7 @@ class Controller:
         self._audio = tone_generator.AudioStream(self.config.device,
                                                  self.config.attack,
                                                  self.config.release)
-        self._rpd = responder.Responder(self.config.timeout,
+        self._rpd = responder.Responder(self.config.tone_duration,
                                         self.config.responder_device)
 
     def clicktone(self, freq, level, earside):
@@ -92,21 +99,25 @@ class Controller:
             raise OverflowError
         self._rpd.clear()
         self._audio.start(freq, level, earside)
-        time.sleep(self.config.timeout)
+        time.sleep(self.config.tone_duration)
         click_down = self._rpd.click_down()
         self._audio.stop()
         if click_down:
-            time.sleep(self.config.timeout * 0.75)  # tolerance: 75% of timeout
+            time.sleep(self.config.tolerance)
             click_up = self._rpd.click_up()
             if click_up:
-                time.sleep(self.config.timeout * 0.25 + random.random())
+                time.sleep(random.uniform(self.config.pause_time[0],
+                           self.config.pause_time[1]) -
+                           self.config.tolerance)
                 return True
             else:
                 self._rpd.wait_for_click_up()
+                time.sleep(1)
                 return False
 
         else:
-            time.sleep(self.config.timeout + random.random())
+            time.sleep(random.uniform(self.config.pause_time[0],
+                                      self.config.pause_time[1]))
             return False
 
     def audibletone(self, freq, current_level, earside):
@@ -125,6 +136,11 @@ class Controller:
 
         return current_level
 
+    def wait_for_click(self):
+        self._rpd.clear()
+        self._rpd.wait_for_click_down_and_up()
+        time.sleep(1)
+
     def save_results(self, level, freq, earside):
         row = [level, freq, earside]
         self.writer.writerow(row)
@@ -134,6 +150,7 @@ class Controller:
 
     def __exit__(self, *args):
         time.sleep(0.1)
+        os.system("stty echo")
         self._rpd.close()
         self._audio.close()
         self.csvfile.close()
