@@ -7,8 +7,8 @@ import time
 
 class Responder:
 
-    def __init__(self, timeout, responder_device):
-        self._timeout = timeout
+    def __init__(self, tone_duration, responder_device):
+        self._timeout = tone_duration
         self._event1 = threading.Event()
         self._event1.set()
         self._event2 = threading.Event()
@@ -39,6 +39,7 @@ class Responder:
 
     def clear(self):
         self._event1.clear()
+        self._event2.clear()
         self._event3.clear()
 
     def wait_for_arrow(self):
@@ -49,9 +50,14 @@ class Responder:
     def wait_for_click_up(self):
         self._event3.wait()
 
+    def wait_for_click_down_and_up(self):
+        self._event1.wait()
+        self._event3.wait()
+
     def _mcevent_down(self, event):
         if event.MessageName == "mouse left down":
             self._event1.set()
+            self._event3.clear()
 
     def _mcevent_up(self, event):
         if event.MessageName == "mouse left up":
