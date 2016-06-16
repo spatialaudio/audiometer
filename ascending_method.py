@@ -13,13 +13,9 @@ anwendbar! Bitte suchen Sie einen Audiologen auf!
 
 """
 
-import argparse
+import sys
 import logging
 from audiometer import controller
-import time
-
-
-parser = argparse.ArgumentParser()
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s',
@@ -30,6 +26,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s',
 class AscendingMethod:
 
     def __init__(self):
+        self.ctrl = controller.Controller()
         self.current_level = 0
         self.click = True
 
@@ -57,7 +54,9 @@ class AscendingMethod:
                              self.ctrl.config.beginning_fam_level,
                              self.earside)
 
-        time.sleep(1)
+        print("\nTo begin, click once")
+        self.ctrl.wait_for_click()
+
         while self.click:
             logging.info("-%s", self.ctrl.config.large_level_decrement)
             self.decrement_click(self.ctrl.config.large_level_decrement)
@@ -110,34 +109,33 @@ class AscendingMethod:
 
     def run(self):
 
-        with controller.Controller() as self.ctrl:
-            if not self.ctrl.config.logging:
-                logging.disable(logging.CRITICAL)
+        if not self.ctrl.config.logging:
+            logging.disable(logging.CRITICAL)
 
-            for self.earside in self.ctrl.config.earsides:
-                for self.freq in self.ctrl.config.freqs:
-                    logging.info('freq:%s earside:%s', self.freq, self.earside)
-                    try:
-                        self.hearing_test()
-                        self.ctrl.save_results(self.current_level, self.freq,
-                                               self.earside)
+        for self.earside in self.ctrl.config.earsides:
+            for self.freq in self.ctrl.config.freqs:
+                logging.info('freq:%s earside:%s', self.freq, self.earside)
+                try:
+                    self.hearing_test()
+                    self.ctrl.save_results(self.current_level, self.freq,
+                                           self.earside)
 
-                    except OverflowError:
-                        print("The signal is distorted. Possible causes are "
-                              "an incorrect calibration or a severe hearing "
-                              "loss. I'm going to the next frequency.")
-                        continue
+                except OverflowError:
+                    print("The signal is distorted. Possible causes are "
+                          "an incorrect calibration or a severe hearing "
+                          "loss. I'm going to the next frequency.")
+                    continue
 
-                    except KeyboardInterrupt:
-                        parser.exit('\nInterrupted by user')
+                except KeyboardInterrupt:
+                    sys.exit('\nInterrupted by user')
 
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        self.close()
+        return self.ctrl.__exit__()
 
+if __name__ == '__main__':
 
-with AscendingMethod() as asc_method:
-
-    asc_method.run()
+    with AscendingMethod() as asc_method:
+        asc_method.run()
