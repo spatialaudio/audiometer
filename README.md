@@ -12,7 +12,7 @@
 - audiometric technical standards
 - calibration of audiometers
 
-[Read the manual] for 
+[Read the manual](https://github.com/spatialaudio/audiometer/blob/master/docs/manual.ipynb) for 
 
 - installation instructions
 - how to use this audiometer 
