@@ -11,7 +11,7 @@ class AudioStream:
     def __init__(self, device, attack, release):
         if attack <= 0 or release <= 0:
             raise ValueError("attack and release have to be positive "
-            "and different from zero")
+                             "and different from zero")
         self._stream = sd.OutputStream(device=device,
                                        callback=self._callback, channels=2)
         self._attack = np.round(_seconds2samples(attack / 1000)).astype(int)
@@ -45,16 +45,14 @@ class AudioStream:
         self._index += frames
         self._last_gain = gain[-1]
 
-    def start(self, freq, gain_db, earside=None, attack=None):
+    def start(self, freq, gain_db, earside=None):
         if self._target_gain != 0:
-            raise ValueError("Before calling start(), target_gain must be zero")
+            raise ValueError("Before calling start(), "
+                             "target_gain must be zero")
         if gain_db == -np.inf:
             raise ValueError("gain_db must be a finite value")
         target_gain = _db2lin(gain_db)
-        if attack is None:
-            slope = target_gain / self._attack
-        else:
-            slope = target_gain / attack
+        slope = target_gain / self._attack
         self._target_gain = target_gain
         self._freq = freq
         self._callback_parameters = target_gain, slope, freq
@@ -68,13 +66,14 @@ class AudioStream:
     def stop(self):
         if self._target_gain == 0:
             raise ValueError("Before calling stop(),"
-                 "target_gain must be different from zero")
+                             "target_gain must be different from zero")
         target_gain = 0
         slope = - self._target_gain / self._release
         self._target_gain = target_gain
         self._callback_parameters = target_gain, slope, self._freq
 
     def close(self):
+
         if self._callback_status:
             logging.warning(str(self._callback_status))
         self._stream.stop()
@@ -86,9 +85,9 @@ class AudioStream:
         self.close()
 
 
-def _seconds2samples(seconds):
-    return samplerate * seconds
-
-
 def _db2lin(db_value):
     return 10 ** (db_value / 20)
+
+
+def _seconds2samples(seconds):
+    return samplerate * seconds
