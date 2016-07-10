@@ -143,3 +143,5 @@ if __name__ == '__main__':
 
     with AscendingMethod() as asc_method:
         asc_method.run()
+
+    print("Finished!")
