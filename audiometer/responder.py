@@ -2,12 +2,14 @@
 
 from .pyxhook import pyxhook
 import threading
+import os
 import time
 
 
 class Responder:
 
-    def __init__(self, tone_duration, responder_device):
+    def __init__(self, tone_duration):
+        os.system("stty -echo")
         self._timeout = tone_duration
         self._event1 = threading.Event()
         self._event1.set()
@@ -75,6 +77,7 @@ class Responder:
             self._event2.set()
 
     def __exit__(self, *args):
+        os.system("stty echo")
         self.close()
 
     def __enter__(self):
