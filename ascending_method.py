@@ -16,6 +16,7 @@ anwendbar! Bitte suchen Sie einen Audiologen auf!
 import sys
 import logging
 from audiometer import controller
+from audiometer import audiogram
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s',
@@ -124,6 +125,7 @@ class AscendingMethod:
                     print("The signal is distorted. Possible causes are "
                           "an incorrect calibration or a severe hearing "
                           "loss. I'm going to the next frequency.")
+                    self.current_level = None
                     continue
 
                 except KeyboardInterrupt:
@@ -133,7 +135,9 @@ class AscendingMethod:
         return self
 
     def __exit__(self, *args):
-        return self.ctrl.__exit__()
+        self.ctrl.__exit__()
+        audiogram.make_audiogram(self.ctrl.config.filename,
+                                 self.ctrl.config.results_path)
 
 if __name__ == '__main__':
 
