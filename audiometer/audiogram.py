@@ -35,10 +35,10 @@ def set_audiogram_parameters(dBHL, freqs, conduction, masking, earside,
     ax.set_xlabel("f / Hz")
     ax.set_ylabel('Sound Intensity / dBHL')
     ax.set_xlim([-0.5, xticks[-1] + 0.5])
-    ax.set_ylim([-10, 120])
+    ax.set_ylim([-20, 120])
     plt.setp(ax, xticks=xticks, xticklabels=sorted(freqs))
-    major_ticks = np.arange(-10, 120, 10)
-    minor_ticks = np.arange(-10, 120, 5)
+    major_ticks = np.arange(-20, 120, 10)
+    minor_ticks = np.arange(-20, 120, 5)
     ax.set_yticks(major_ticks)
     ax.set_yticks(minor_ticks, minor=True)
     ax.grid(which='both')
@@ -86,7 +86,7 @@ def set_audiogram_parameters(dBHL, freqs, conduction, masking, earside,
 def make_audiogram(filename, results_path=None):
 
         if results_path is None:
-            results_path = 'audiometer/results/'
+            results_path = 'results/'
         data = _read_audiogram(filename)
         conduction = [option for cond, option, none in data
                       if cond == 'Conduction'][0]
@@ -114,7 +114,7 @@ def make_audiogram(filename, results_path=None):
 
 
 def _read_audiogram(filename):
-    with open('audiometer/results/{}'.format(filename), 'r') as csvfile:
+    with open('results/{}'.format(filename), 'r') as csvfile:
         reader = csv.reader(csvfile)
         data = [data for data in reader]
     return data
@@ -124,5 +124,8 @@ def _extract_parameters(data, earside):
     parameters = sorted((float(freq), float(level)) for level, freq, side
                         in data if side == earside)
     dBHL = [level for freq, level in parameters]
-    freqs = [freq for freq, level in parameters]
+    freqs = [int(freq) for freq, level in parameters]
     return dBHL, freqs
+
+
+make_audiogram('result_2016-07-10_18-07-00.csv')
