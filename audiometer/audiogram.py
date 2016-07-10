@@ -121,7 +121,7 @@ def _read_audiogram(filename):
 
 
 def _extract_parameters(data, earside):
-    parameters = sorted((int(freq), int(level)) for level, freq, side
+    parameters = sorted((float(freq), float(level)) for level, freq, side
                         in data if side == earside)
     dBHL = [level for freq, level in parameters]
     freqs = [freq for freq, level in parameters]
