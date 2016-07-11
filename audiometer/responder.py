@@ -66,14 +66,14 @@ class Responder:
             self._event3.set()
 
     def _kbevent(self, event):
-        if event.MessageName == "key down" and event.Key == "Down":
-            self._key = "arrow_down"
+        if event.MessageName == "key down" and event.Key == "Left":
+            self._key = "arrow_left"
             self._event2.set()
-        if event.MessageName == "key down" and event.Key == "Up":
-            self._key = "arrow_up"
+        if event.MessageName == "key down" and event.Key == "Right":
+            self._key = "arrow_right"
             self._event2.set()
-        if event.MessageName == "key down" and event.Key == "Return":
-            self._key = "enter"
+        if event.MessageName == "key down" and event.Key == "space":
+            self._key = "space"
             self._event2.set()
 
     def __exit__(self, *args):
