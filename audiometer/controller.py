@@ -152,7 +152,7 @@ class Controller:
 
     def audibletone(self, freq, current_level_dBHL, earside):
         self.key = ''
-        while self.key != 'enter':
+        while self.key != 'space':
             if self.dBHL2dBFS(freq, current_level_dBHL) > 0:
                 print("WARNING: Signal is distorted. Decrease the current "
                       "level!")
@@ -160,9 +160,9 @@ class Controller:
                               self.dBHL2dBFS(freq, current_level_dBHL),
                               earside)
             self.key = self._rpd.wait_for_arrow()
-            if self.key == 'arrow_down':
+            if self.key == 'arrow_left':
                 current_level_dBHL -= 5
-            if self.key == 'arrow_up':
+            if self.key == 'arrow_right':
                 current_level_dBHL += 5
             self._audio.stop()
 
