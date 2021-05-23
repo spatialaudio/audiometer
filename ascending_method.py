@@ -97,8 +97,8 @@ class AscendingMethod:
                 current_level_list.append(self.current_level)
                 logging.info("2of3?: %s", current_level_list)
                 # http://stackoverflow.com/a/11236055
-                if [k for k in current_level_list
-                   if current_level_list.count(k) == 2]:
+                if [n for n in current_level_list
+                   if current_level_list.count(n) == 2]:
                     two_answers = True
                     logging.info("2of3 --> True")
                     break
