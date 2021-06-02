@@ -35,10 +35,10 @@ def config():
                         "item represents the ending earside, consequently. "
                         "It is also possible to choose only one earside, "
                         "left or right")
-    parser.add_argument("--small-level-increment", type=float, default=5)
-    parser.add_argument("--large-level-increment", type=float, default=10)
-    parser.add_argument("--small-level-decrement", type=float, default=10)
-    parser.add_argument("--large-level-decrement", type=float, default=20)
+    parser.add_argument("--minor-increment", type=float, default=5)
+    parser.add_argument("--minor-decrement", type=float, default=5)
+    parser.add_argument("--major-increment", type=float, default=10)
+    parser.add_argument("--major-decrement", type=float, default=10)
     parser.add_argument("--start-level-familiar", type=float, default=-40)
     parser.add_argument("--freqs", type=float, nargs='+', default=[1000, 1500,
                         2000, 3000, 4000, 6000, 8000, 750, 500, 250, 125],
