@@ -20,7 +20,7 @@ def config():
     parser.add_argument("--attack", type=float, default=30)
     parser.add_argument("--release", type=float, default=40)
     parser.add_argument(
-        "--tone-duration", type=float, default=2, help='For more'
+        "--tone-duration", type=float, default=1, help='For more'
         'information on the tone duration have a look at '
         'ISO8253-1 ch. 6.2.1')
     parser.add_argument("--tolerance", type=float, default=1.5)
