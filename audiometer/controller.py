@@ -25,7 +25,7 @@ def config():
         'ISO8253-1 ch. 6.2.1')
     parser.add_argument("--tolerance", type=float, default=1.5)
     parser.add_argument(
-        "--pause-time", type=float, default=[2, 3], nargs=2, help="The pause "
+        "--pause-time", type=float, default=[1, 2], nargs=2, help="The pause "
         "time is calculated by an interval [a,b] randomly. It represents "
         "the total duration after the tone presentation. Please note, "
         "the pause time has to be greater than or equal to the tone duration")
