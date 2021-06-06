@@ -80,10 +80,10 @@ class AscendingMethod:
         current_level_list = []
         current_level_list.append(self.current_level)
 
-        three_answers = False
-        while not three_answers:
-            logging.info("3of5?: %s", current_level_list)
-            for x in range(4):
+        two_answers = False
+        while not two_answers:
+            logging.info("2of3?: %s", current_level_list)
+            for x in range(3):
                 while self.click:
                     logging.info("-%s", self.ctrl.config.small_level_decrement)
                     self.decrement_click(
@@ -95,12 +95,12 @@ class AscendingMethod:
                         self.ctrl.config.small_level_increment)
 
                 current_level_list.append(self.current_level)
-                logging.info("3of5?: %s", current_level_list)
+                logging.info("2of3?: %s", current_level_list)
                 # http://stackoverflow.com/a/11236055
-                if [k for k in current_level_list
-                   if current_level_list.count(k) == 3]:
-                    three_answers = True
-                    logging.info("3of5 --> True")
+                if [n for n in current_level_list
+                   if current_level_list.count(n) == 2]:
+                    two_answers = True
+                    logging.info("2of3 --> True")
                     break
             else:
                 logging.info("No Match! --> +%s",

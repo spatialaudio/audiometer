@@ -20,12 +20,12 @@ def config():
     parser.add_argument("--attack", type=float, default=30)
     parser.add_argument("--release", type=float, default=40)
     parser.add_argument(
-        "--tone-duration", type=float, default=2, help='For more'
+        "--tone-duration", type=float, default=1, help='For more'
         'information on the tone duration have a look at '
         'ISO8253-1 ch. 6.2.1')
     parser.add_argument("--tolerance", type=float, default=1.5)
     parser.add_argument(
-        "--pause-time", type=float, default=[2, 3], nargs=2, help="The pause "
+        "--pause-time", type=float, default=[1, 2], nargs=2, help="The pause "
         "time is calculated by an interval [a,b] randomly. It represents "
         "the total duration after the tone presentation. Please note, "
         "the pause time has to be greater than or equal to the tone duration")
@@ -35,10 +35,10 @@ def config():
                         "item represents the ending earside, consequently. "
                         "It is also possible to choose only one earside, "
                         "left or right")
-    parser.add_argument("--small-level-increment", type=float, default=5)
-    parser.add_argument("--large-level-increment", type=float, default=10)
-    parser.add_argument("--small-level-decrement", type=float, default=10)
-    parser.add_argument("--large-level-decrement", type=float, default=20)
+    parser.add_argument("--minor-increment", type=float, default=5)
+    parser.add_argument("--minor-decrement", type=float, default=5)
+    parser.add_argument("--major-increment", type=float, default=10)
+    parser.add_argument("--major-decrement", type=float, default=10)
     parser.add_argument("--start-level-familiar", type=float, default=-40)
     parser.add_argument("--freqs", type=float, nargs='+', default=[1000, 1500,
                         2000, 3000, 4000, 6000, 8000, 750, 500, 250, 125],
@@ -160,9 +160,9 @@ class Controller:
                               self.dBHL2dBFS(freq, current_level_dBHL),
                               earside)
             self.key = self._rpd.wait_for_arrow()
-            if self.key == 'arrow_left':
-                current_level_dBHL -= 5
-            if self.key == 'arrow_right':
+            if self.key == '1':
+                current_level_dBHL -= 10
+            if self.key == '2':
                 current_level_dBHL += 5
             self._audio.stop()
 
