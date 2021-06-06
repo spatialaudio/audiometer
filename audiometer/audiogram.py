@@ -31,6 +31,8 @@ def set_audiogram_parameters(dBHL, freqs, conduction, masking, earside,
     """
     if ax is None:
         ax = plt.gca()
+    if freqs is None:
+        freqs = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000]
     xticks = np.arange(len(freqs))
     ax.set_xlabel("f / Hz")
     ax.set_ylabel('Sound Intensity / dBHL')
